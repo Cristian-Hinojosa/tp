@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama de Gantt - Sistema de Gestión Integral para Licorería Mayorista</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .gantt-wrapper {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .gantt-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gantt-header th {
+            padding: 15px 10px;
+            text-align: center;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-header {
+            width: 300px;
+            text-align: left !important;
+        }
+
+        .gantt-row {
+            transition: all 0.3s ease;
+        }
+
+        .gantt-row:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .gantt-row:hover {
+            background-color: #e3f2fd;
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-cell {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 500;
+            color: #2c3e50;
+            position: sticky;
+            left: 0;
+            background: inherit;
+            z-index: 5;
+            border-right: 2px solid #667eea;
+        }
+
+        .phase-task {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subtask {
+            padding-left: 25px;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .subtask::before {
+            content: "└─ ";
+            color: #6c757d;
+            margin-right: 5px;
+        }
+
+        .month-cell {
+            padding: 5px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            width: 80px;
+            position: relative;
+        }
+
+        .task-bar {
+            height: 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .task-bar:hover::before {
+            left: 100%;
+        }
+
+        .phase-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 30px;
+            font-weight: 700;
+        }
+
+        .analysis-bar {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .design-bar {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .development-bar {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        }
+
+        .testing-bar {
+            background: linear-gradient(135deg, #6f42c1 0%, #6610f2 100%);
+        }
+
+        .deployment-bar {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+        }
+
+        .milestone {
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid #ff6b6b;
+            margin: 2px auto;
+            position: relative;
+        }
+
+        .milestone::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -12px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 10px solid #ff6b6b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .project-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .gantt-table {
+                min-width: 800px;
+            }
+            
+            .task-header {
+                width: 250px;
+            }
+            
+            .month-cell {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍷 Sistema de Gestión Integral para Licorería Mayorista</h1>
+        
+        <div class="project-info">
+            <div class="info-item">
+                <span class="info-label">📅 Duración:</span>
+                <span class="info-value">18 meses</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">👥 Equipo:</span>
+                <span class="info-value">12-15 personas</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🎯 Módulos:</span>
+                <span class="info-value">10 módulos principales</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">💼 Metodología:</span>
+                <span class="info-value">Agile/Scrum</span>
+            </div>
+        </div>
+
+        <div class="gantt-wrapper">
+            <table class="gantt-table">
+                <thead class="gantt-header">
+                    <tr>
+                        <th class="task-header">Fases y Actividades</th>
+                        <th>Mes 1</th>
+                        <th>Mes 2</th>
+                        <th>Mes 3</th>
+                        <th>Mes 4</th>
+                        <th>Mes 5</th>
+                        <th>Mes 6</th>
+                        <th>Mes 7</th>
+                        <th>Mes 8</th>
+                        <th>Mes 9</th>
+                        <th>Mes 10</th>
+                        <th>Mes 11</th>
+                        <th>Mes 12</th>
+                        <th>Mes 13</th>
+                        <th>Mes 14</th>
+                        <th>Mes 15</th>
+                        <th>Mes 16</th>
+                        <th>Mes 17</th>
+                        <th>Mes 18</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- FASE 1: ANÁLISIS Y RELEVAMIENTO -->
+                    <tr class="gantt-row">
+                        <td class="task-cell phase-task">🔍 FASE 1: ANÁLISIS Y RELEVAMIENTO</td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 1</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 1</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 1</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Entrevistas estructuradas</td>
+                        <td class="month-cell"><div class="task-bar analysis-bar">ENT</div></td>
+                        <td class="month-cell"><div class="task-bar analysis-bar">ENT</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Análisis de procesos actuales</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar analysis-bar">PROC</div></td>
+                        <td class="month-cell"><div class="task-bar analysis-bar">PROC</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Definición de requerimientos</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar analysis-bar">REQ</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    
+                    <!-- FASE 2: DISEÑO Y ARQUITECTURA -->
+                    <tr class="gantt-row">
+                        <td class="task-cell phase-task">🏗️ FASE 2: DISEÑO Y ARQUITECTURA</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 2</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 2</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">FASE 2</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Arquitectura del sistema</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar design-bar">ARQ</div></td>
+                        <td class="month-cell"><div class="task-bar design-bar">ARQ</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Diseño de base de datos</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar design-bar">BD</div></td>
+                        <td class="month-cell"><div class="task-bar design-bar">BD</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Diseño de interfaces (UX/UI)</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar design-bar">UX</div></td>
+                        <td class="month-cell"><div class="task-bar design-bar">UX</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+
+                    <!-- FASE 3: DESARROLLO SPRINT 1 -->
+                    <tr class="gantt-row">
+                        <td class="task-cell phase-task">💻 FASE 3: DESARROLLO - SPRINT 1</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S1</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S1</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S1</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Módulo Inventario y Almacén</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar development-bar">INV</div></td>
+                        <td class="month-cell"><div class="task-bar development-bar">INV</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Módulo Compras e Importaciones</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar development-bar">COMP</div></td>
+                        <td class="month-cell"><div class="task-bar development-bar">COMP</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+
+                    <!-- FASE 4: DESARROLLO SPRINT 2 -->
+                    <tr class="gantt-row">
+                        <td class="task-cell phase-task">💻 FASE 4: DESARROLLO - SPRINT 2</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S2</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S2</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S2</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Módulo Ventas y Clientes B2B</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar development-bar">VEN</div></td>
+                        <td class="month-cell"><div class="task-bar development-bar">VEN</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Módulo Logística y Distribución</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar development-bar">LOG</div></td>
+                        <td class="month-cell"><div class="task-bar development-bar">LOG</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+
+                    <!-- FASE 5: DESARROLLO SPRINT 3 -->
+                    <tr class="gantt-row">
+                        <td class="task-cell phase-task">💻 FASE 5: DESARROLLO - SPRINT 3</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S3</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S3</div></td>
+                        <td class="month-cell"><div class="task-bar phase-bar">S3</div></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                    </tr>
+                    <tr class="gantt-row">
+                        <td class="task-cell subtask">Módulo Facturación y Finanzas</td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"></td>
+                        <td class="month-cell"><div class="task-bar development-bar">FACT</div></td>
+                        <td class="month-
